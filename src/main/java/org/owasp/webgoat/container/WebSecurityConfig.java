@@ -41,6 +41,7 @@ public class WebSecurityConfig {
                         "/plugins/**",
                         "/registration",
                         "/register.mvc",
+                        "/v3/api-docs/**",
                         "/actuator/**")
                     .permitAll()
                     // Lessons deliver mail by POSTing to the mailbox over HTTP (RestTemplate),

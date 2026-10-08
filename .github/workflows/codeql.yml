@@ -1,0 +1,35 @@
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '23 4 * * 1'
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze Java
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: java-kotlin
+          queries: security-extended
+      - name: Set up JDK
+        uses: ./.github/actions/java-setup
+        with:
+          cache: 'maven'
+      - name: Build with Maven
+        run: ./mvnw --no-transfer-progress -DskipTests package
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4

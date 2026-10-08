@@ -32,7 +32,13 @@ public class WebSecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     return http.authorizeHttpRequests(
             auth -> {
-              auth.requestMatchers("/css/**", "/webjars/**", "/favicon.ico", "/js/**", "/images/**")
+              auth.requestMatchers(
+                      "/css/**",
+                      "/webjars/**",
+                      "/favicon.ico",
+                      "/js/**",
+                      "/images/**",
+                      "/v3/api-docs/**")
                   .permitAll();
               auth.requestMatchers(
                       HttpMethod.GET,

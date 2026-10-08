@@ -1,0 +1,76 @@
+name: OWASP ZAP
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '41 4 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: ZAP full and API scans
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Set up JDK
+        uses: ./.github/actions/java-setup
+        with:
+          cache: 'maven'
+      - name: Build WebGoat
+        run: ./mvnw --no-transfer-progress -DskipTests package
+      - name: Start WebGoat
+        run: |
+          java \
+            -Dwebgoat.server.directory="$RUNNER_TEMP/webgoat" \
+            -Dwebgoat.user.directory="$RUNNER_TEMP/webgoat" \
+            -jar target/webgoat-2026.5-SNAPSHOT.jar \
+            --webgoat.host=0.0.0.0 \
+            --webwolf.host=0.0.0.0 \
+            --springdoc.api-docs.enabled=true \
+            > "$RUNNER_TEMP/webgoat.log" 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:8080/WebGoat/login >/dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          cat "$RUNNER_TEMP/webgoat.log"
+          exit 1
+      - name: ZAP full scan
+        uses: zaproxy/action-full-scan@v0.13.0
+        with:
+          target: 'http://host.docker.internal:8080/WebGoat/'
+          cmd_options: '-m 5'
+          artifact_name: zap-full-webgoat
+          allow_issue_writing: false
+          fail_action: false
+      - name: ZAP WebWolf full scan
+        uses: zaproxy/action-full-scan@v0.13.0
+        with:
+          target: 'http://host.docker.internal:9090/WebWolf/'
+          cmd_options: '-m 5'
+          artifact_name: zap-full-webwolf
+          allow_issue_writing: false
+          fail_action: false
+      - name: ZAP API scan
+        uses: zaproxy/action-api-scan@v0.10.0
+        with:
+          target: 'http://host.docker.internal:8080/WebGoat/v3/api-docs'
+          format: openapi
+          artifact_name: zap-api-webgoat
+          allow_issue_writing: false
+          fail_action: false
+      - name: ZAP WebWolf API scan
+        uses: zaproxy/action-api-scan@v0.10.0
+        with:
+          target: 'http://host.docker.internal:9090/WebWolf/v3/api-docs'
+          format: openapi
+          artifact_name: zap-api-webwolf
+          allow_issue_writing: false
+          fail_action: false
