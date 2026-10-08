@@ -41,6 +41,7 @@ public class WebSecurityConfig {
                         "/plugins/**",
                         "/registration",
                         "/register.mvc",
+                        "/v3/api-docs",
                         "/v3/api-docs/**",
                         "/actuator/**")
                     .permitAll()
