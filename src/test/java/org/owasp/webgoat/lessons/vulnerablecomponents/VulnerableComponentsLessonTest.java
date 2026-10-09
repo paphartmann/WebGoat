@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.StreamException;
+import com.thoughtworks.xstream.security.AnyTypePermission;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -33,6 +34,7 @@ public class VulnerableComponentsLessonTest {
     XStream xstream = new XStream();
     xstream.setClassLoader(Contact.class.getClassLoader());
     xstream.alias("contact", ContactImpl.class);
+    xstream.addPermission(AnyTypePermission.ANY);
     xstream.ignoreUnknownElements();
     assertThat(xstream.fromXML(contact)).isNotNull();
   }
@@ -42,6 +44,7 @@ public class VulnerableComponentsLessonTest {
     XStream xstream = new XStream();
     xstream.setClassLoader(Contact.class.getClassLoader());
     xstream.alias("contact", ContactImpl.class);
+    xstream.addPermission(AnyTypePermission.ANY);
     xstream.ignoreUnknownElements();
     try {
       ((Contact) xstream.fromXML(strangeContact)).getFirstName();
@@ -61,6 +64,7 @@ public class VulnerableComponentsLessonTest {
     XStream xstream = new XStream();
     xstream.setClassLoader(Contact.class.getClassLoader());
     xstream.alias("contact", ContactImpl.class);
+    xstream.addPermission(AnyTypePermission.ANY);
     xstream.ignoreUnknownElements();
     Exception e =
         assertThrows(
