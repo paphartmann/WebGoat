@@ -68,13 +68,26 @@ jobs:
             --cookie "$RUNNER_TEMP/webgoat-cookies.txt" \
             "http://127.0.0.1:8080/WebGoat/service/lessonmenu.mvc" \
             > "$RUNNER_TEMP/webgoat-menu.json"
-          python -c "import json,sys; menu=json.load(open(sys.argv[1])); assert menu, 'WebGoat test user is not authenticated'; print('Authenticated WebGoat lesson menu successfully')" \
-            "$RUNNER_TEMP/webgoat-menu.json"
+          python - "$RUNNER_TEMP/webgoat-menu.json" <<'PY'
+          import json
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as menu_file:
+              menu = json.load(menu_file)
+          lessons = [
+              lesson
+              for category in menu
+              for lesson in category.get("children", [])
+              if lesson.get("link", "").endswith(".lesson")
+          ]
+          assert lessons, "Authenticated lesson menu contains no lesson links"
+          print(f"Authenticated WebGoat lesson menu contains {len(lessons)} lessons")
+          PY
         shell: bash
       - name: ZAP full scan
         uses: zaproxy/action-full-scan@v0.13.0
         with:
-          target: 'http://127.0.0.1:8080/WebGoat/'
+          target: 'http://127.0.0.1:8080/WebGoat/start.mvc'
           cmd_options: '-a -j --client-spider -m 30 -n .zap/webgoat.context -U zapscanner'
           artifact_name: zap-full-webgoat
           allow_issue_writing: false
