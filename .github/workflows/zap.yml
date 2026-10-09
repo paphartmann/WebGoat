@@ -84,33 +84,11 @@ jobs:
           print(f"Authenticated WebGoat lesson menu contains {len(lessons)} lessons")
           PY
         shell: bash
-      - name: Configure ZAP authenticated session
-        run: |
-          python - "$RUNNER_TEMP/webgoat-cookies.txt" "$GITHUB_ENV" <<'PY'
-          import http.cookiejar
-          import sys
-
-          cookies = http.cookiejar.MozillaCookieJar(sys.argv[1])
-          cookies.load(ignore_discard=True, ignore_expires=True)
-          session = next(
-              (cookie for cookie in cookies if cookie.name == "JSESSIONID"),
-              None,
-          )
-          if session is None:
-              raise SystemExit("Authenticated WebGoat session has no JSESSIONID cookie")
-          print(f"::add-mask::{session.value}")
-          with open(sys.argv[2], "a", encoding="utf-8") as github_env:
-              github_env.write(f"ZAP_AUTH_HEADER_VALUE=JSESSIONID={session.value}\n")
-              github_env.write("ZAP_AUTH_HEADER=Cookie\n")
-              github_env.write("ZAP_AUTH_HEADER_SITE=127.0.0.1\n")
-          print("Configured ZAP to reuse the authenticated WebGoat session")
-          PY
-        shell: bash
       - name: ZAP full scan
         uses: zaproxy/action-full-scan@v0.13.0
         with:
           target: 'http://127.0.0.1:8080/WebGoat/'
-          cmd_options: '-a -j --client-spider -m 30 -n .zap/webgoat.context --hook=/zap/wrk/.zap/hooks.py'
+          cmd_options: '-a -j --client-spider -m 30 -n .zap/webgoat.context -U zapscanner --hook=/zap/wrk/.zap/hooks.py'
           artifact_name: zap-full-webgoat
           allow_issue_writing: false
           fail_action: false
@@ -119,7 +97,7 @@ jobs:
         with:
           target: 'http://127.0.0.1:8080/WebGoat/v3/api-docs'
           format: openapi
-          cmd_options: '-a -n .zap/webgoat.context'
+          cmd_options: '-a -n .zap/webgoat.context -U zapscanner'
           artifact_name: zap-api-webgoat
           allow_issue_writing: false
           fail_action: false
