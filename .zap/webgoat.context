@@ -4,7 +4,7 @@
     <name>WebGoat</name>
     <desc>Authenticated ZAP scan of the disposable WebGoat CI user.</desc>
     <inscope>true</inscope>
-    <incregexes>http://127\.0\.0\.1:8080/WebGoat/.*</incregexes>
+    <incregexes>http://127\.0\.0\.1:8080/WebGoat(/.*)?</incregexes>
     <excregexes>http://127\.0\.0\.1:8080/WebGoat/logout</excregexes>
     <authentication>
       <type>2</type>
