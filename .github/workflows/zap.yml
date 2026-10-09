@@ -25,6 +25,7 @@ jobs:
       - name: Build WebGoat
         run: ./mvnw --no-transfer-progress -DskipTests package
       - name: Start WebGoat
+        id: webgoat
         env:
           WEBGOAT_HOST: 0.0.0.0
           WEBWOLF_HOST: 0.0.0.0
@@ -54,20 +55,51 @@ jobs:
           fi
           python -c "import json,sys; paths=json.load(open(sys.argv[1]))['paths']; assert paths, 'WebGoat OpenAPI definition contains no paths'; print(f'OpenAPI definition contains {len(paths)} paths')" \
             "$RUNNER_TEMP/webgoat-openapi.json"
+          curl --fail --silent --cookie-jar "$RUNNER_TEMP/webgoat-cookies.txt" \
+            http://127.0.0.1:8080/WebGoat/registration >/dev/null
+          curl --fail --silent --show-error --location \
+            --cookie "$RUNNER_TEMP/webgoat-cookies.txt" \
+            --cookie-jar "$RUNNER_TEMP/webgoat-cookies.txt" \
+            --data-urlencode 'username=zapscanner' \
+            --data-urlencode 'password=webgoat' \
+            --data-urlencode 'matchingPassword=webgoat' \
+            --data-urlencode 'agree=agree' \
+            http://127.0.0.1:8080/WebGoat/register.mvc >/dev/null
+          curl --fail --silent --show-error \
+            --cookie "$RUNNER_TEMP/webgoat-cookies.txt" \
+            "http://127.0.0.1:8080/WebGoat/service/lessonmenu.mvc" \
+            > "$RUNNER_TEMP/webgoat-menu.json"
+          python -c "import json,sys; menu=json.load(open(sys.argv[1])); assert menu, 'WebGoat test user is not authenticated'; print('Authenticated WebGoat lesson menu successfully')" \
+            "$RUNNER_TEMP/webgoat-menu.json"
+          auth_cookie=$(awk '$6 == "JSESSIONID" { print "JSESSIONID=" $7 }' "$RUNNER_TEMP/webgoat-cookies.txt" | tail -n 1)
+          if [ -z "$auth_cookie" ]; then
+            echo "Could not obtain the authenticated WebGoat session cookie."
+            exit 1
+          fi
+          echo "::add-mask::$auth_cookie"
+          echo "auth_cookie=$auth_cookie" >> "$GITHUB_OUTPUT"
         shell: bash
       - name: ZAP full scan
         uses: zaproxy/action-full-scan@v0.13.0
         with:
-          target: 'http://host.docker.internal:8080/WebGoat/'
-          cmd_options: '-m 5'
+          target: 'http://127.0.0.1:8080/WebGoat/'
+          cmd_options: '-a -j -m 5'
           artifact_name: zap-full-webgoat
           allow_issue_writing: false
           fail_action: false
+        env:
+          ZAP_AUTH_HEADER: Cookie
+          ZAP_AUTH_HEADER_VALUE: ${{ steps.webgoat.outputs.auth_cookie }}
+          ZAP_AUTH_HEADER_SITE: '127.0.0.1:8080'
       - name: ZAP API scan
         uses: zaproxy/action-api-scan@v0.10.0
         with:
-          target: 'http://host.docker.internal:8080/WebGoat/v3/api-docs'
+          target: 'http://127.0.0.1:8080/WebGoat/v3/api-docs'
           format: openapi
           artifact_name: zap-api-webgoat
           allow_issue_writing: false
           fail_action: false
+        env:
+          ZAP_AUTH_HEADER: Cookie
+          ZAP_AUTH_HEADER_VALUE: ${{ steps.webgoat.outputs.auth_cookie }}
+          ZAP_AUTH_HEADER_SITE: '127.0.0.1:8080'
