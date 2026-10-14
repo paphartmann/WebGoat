@@ -6,6 +6,7 @@
     <meta http-equiv="Pragma" CONTENT="no-cache"/>
     <meta http-equiv="Cache-Control" CONTENT="no-cache"/>
     <meta http-equiv="Cache-Control" CONTENT="no-store"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
     <!--  CSS -->
     <link rel="shortcut icon" th:href="@{/css/img/favicon.ico}" type="image/x-icon"/>
@@ -34,7 +35,7 @@
         <div id="lesson-title-wrapper">
 
         </div><!--lesson title end-->
-        <div style="position: absolute;width:600px; z-index:3; top:22px; right: -90px;">
+        <div style="position: absolute;width:min(600px, calc(100% - 260px)); z-index:3; top:22px; right: 0;">
             <input class="form-control" type="text" id="search" name="search" th:placeholder="#{searchmenu}"  style="width:200px;display:inline-block" />
 
             <!-- webwolf menu item -->
