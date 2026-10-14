@@ -55,14 +55,6 @@ img {
     max-width: 100%;
 }
 
-::selection {
-    background: #fff7dd;
-}
-
-::-moz-selection {
-    background: #fff7dd;
-}
-
 /* ==========================================================================
    Layout
    ========================================================================== */
@@ -1005,7 +997,8 @@ cookie-container {
     padding-left: 3px;
 }
 
-#menu-container li.selected, #menu-container a.selected {
+#menu-container li.selected,
+#menu-container a.selected {
     color: #fff;
     /* background-color:#000; */
     font-weight: 550;
